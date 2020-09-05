@@ -1,0 +1,138 @@
+/* body{
+	font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+} */
+.error{
+    color:#E74C3C;
+    font-weight: normal;
+    /* text-transform: capitalize; */
+    font-size:13px;
+    /*font-family: delius unicase;*/
+}
+/*header start*/
+.color_main{
+    width:0px;
+    left:0!important;
+}
+.color_ul{
+    width:50px!important;
+    height: 100%;
+    line-height: 1px;
+}
+.bg1{
+    border-right:5px solid #3C8DBC;
+    border-left:5px solid #3C8DBC;
+}
+.bg2{
+    border-right:5px solid #F39C12;
+    border-left:5px solid #F39C12;;
+}
+.bg3{
+    border-right:5px solid #00A65A;
+    border-left:5px solid #00A65A;
+}
+.bg4{
+    border-right:5px solid #605CA8;
+    border-left:5px solid #605CA8;
+}
+.bg5{
+    border-right:5px solid #DD4B39;
+    border-left:5px solid #DD4B39;
+}
+/*header end*/
+
+.name{
+    text-transform: capitalize;
+}
+.insert{
+    padding:5px;
+    border:1px solid #00ACD6;
+}
+.insert:hover{
+    background:white;
+    color:#00ACD6;
+}
+.st_true{
+    cursor: pointer;
+    color:#00A65A;
+    font-size: 20px;
+}
+.st_false{
+    cursor: pointer;
+    color:#DD4B39;
+    font-size: 20px;
+}
+.edit{
+    cursor: pointer;
+    color:#0073B7;
+    font-size: 20px;
+}
+.delete{
+    cursor: pointer;
+    color:#DD4B39;
+    font-size: 20px;
+}
+.st_true:hover,.st_false:hover,.edit:hover,.delete:hover{
+    transform: scale(1.6);
+    /*transform: rotate(-360deg);*/
+    /*transform: skew(26deg);*/
+/*    transform: translate(0px,25px);*/
+    transition:0.4s;
+}
+.delete_all{
+    border:none;
+    padding:5px;
+    border:1px solid #D73925;
+}
+.delete_all:hover{
+    background: white;
+    color:#D73925;
+    /*transition: 0.2s;*/
+}
+.preview{
+    padding:0px;
+}
+
+
+
+#datatable_filter{
+    text-align: right;
+}
+#datatable_paginate{
+    text-align: right;
+}
+.pagination > .active > a, .pagination > .active > a:focus, .pagination > .active > a:hover, .pagination > .active > span, .pagination > .active > span:focus, .pagination > .active > span:hover{
+    background-color: #f39c12;
+    border-color: #f39c12;
+}
+.nav-tabs-custom > .nav-tabs > li.active{
+    border-top-color: #f39c12;
+}
+
+.sidebar-menu img{
+    vertical-align: top;
+}
+
+
+
+
+.skin-yellow .main-header .navbar{
+    background: #000!important;
+}
+.skin-yellow .main-header .logo{
+    background: #000!important;
+}
+.sr-only{
+    position: relative;
+}
+.main-header .sidebar-toggle:before{
+    content: "";
+}
+.bg-sidebar{
+    background: #222D32;
+}
+.color-white{
+    color: white;
+}
+.border-rd-20{
+    border-radius: 20px;
+}
