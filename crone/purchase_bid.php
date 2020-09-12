@@ -1,4 +1,11 @@
 <?php
+    // sms gateway
+    define('SMS_BASE', "https://rest.nexmo.com/sms/");
+    define('SMS_API', "d83371f2");
+    define('SMS_SECRET', "SB2eD9Ot6QclT66P");
+    define('SMS_FROM', "IbidCM");
+    define('C_CODE', "974");
+
     // echo 'date_default_timezone_set: ' . date_default_timezone_get() . '<br />';
     date_default_timezone_set('Asia/Kolkata');
     $currDateTime = date('Y-m-d H:i:s');
@@ -61,11 +68,20 @@
                         // echo $body;exit;
                         send_mail($winner['email'],$subject,$body);
 
+                        $msg = "You are winner of the bid. Contact Bid Owner - ".$member['email']." : ".$member['phone'];
+
                         // SMS
+                        $fields = array();
+                        $fields['api_key'] = SMS_API;
+                        $fields['api_secret'] = SMS_SECRET;
+                        $fields['to'] = C_CODE.$winner['phone'];
+                        $fields['from'] = SMS_FROM;
+                        $fields['text'] = $subject." ".$msg;
+                        $data_string = json_encode($fields);
+                        $sms_res = sent_SMS($data_string);
 
                         //Notification
                         if($member['notification'] == 'on'){
-                            $msg = "You are winner of the bid. Contact Bid Owner - ".$member['email']." : ".$member['phone'];
 
                             $sql_ins_noti_winner = "INSERT INTO notifications SET 
                                                 member_id = ".$winner['id'].",
@@ -87,12 +103,22 @@
                         $body = get_email_template($member['name'],$row1['number'],'owner1',$winner['name'],$winner['email'],$winner['phone']);
                         send_mail($member['email'],$subject,$body);
 
+
+                        $msg = "Bid Completed. Contact Winner - ".$winner['email']." : ".$winner['phone'];
+
                         // SMS
+                        $fields = array();
+                        $fields['api_key'] = SMS_API;
+                        $fields['api_secret'] = SMS_SECRET;
+                        $fields['to'] = C_CODE.$member['phone'];
+                        $fields['from'] = SMS_FROM;
+                        $fields['text'] = $subject." ".$msg;
+                        $data_string = json_encode($fields);
+                        $sms_res = sent_SMS($data_string);
 
                         // add Notification
                         if($member['notification'] == 'on'){
-                            $msg = "Bid Completed. Contact Winner - ".$winner['email']." : ".$winner['phone'];
-
+                            
                             $sql_ins_not_member = "INSERT INTO notifications SET 
                                                 member_id = ".$member['id'].",
                                                 bid_id = ".$bid_id.",
@@ -127,12 +153,21 @@
                             $body = get_email_template($member['name'],$row1['number'],'owner2');
                             send_mail($member['email'],$subject,$body);
 
-                            // SMS
+                            $msg = "Ad times up. There was no bids placed by anyone.";
 
+                            // SMS
+                            $fields = array();
+                            $fields['api_key'] = SMS_API;
+                            $fields['api_secret'] = SMS_SECRET;
+                            $fields['to'] = C_CODE.$member['phone'];
+                            $fields['from'] = SMS_FROM;
+                            $fields['text'] = $subject." ".$msg;
+                            $data_string = json_encode($fields);
+                            $sms_res = sent_SMS($data_string);
 
                             //Notification
                             if($member['notification'] == 'on'){
-                                $msg = "Ad times up. There was no bids placed by anyone.";
+                                
                                 $sql_ins_not_member = "INSERT INTO notifications SET 
                                                 member_id = ".$member['id'].",
                                                 bid_id = ".$bid_id.",
@@ -156,6 +191,25 @@
 
     // echo $body = get_email_template('name1','123456','winner');
     // send_mail('nikul@kartuminfotech.com',"test",$body);
+
+    function sent_SMS($data_string){
+        $curl = curl_init(SMS_BASE."json");
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array(                                                                   
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))                                                                       
+        );
+
+        $curl_res = curl_exec($curl);
+        $status_data = json_decode($curl_res);
+        // print_r($status_data);
+        curl_close($curl);
+        return $status_data;
+    }
 
     function send_mail($to_email,$subject,$msg,$cc=""){
         // echo "send_mail";

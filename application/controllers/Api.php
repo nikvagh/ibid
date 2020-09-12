@@ -494,17 +494,44 @@
             }else{
                 $member = $this->get_member_by_id($_POST['otp_auth_id']);
 
-                $otp_sms = '1234';
-                $member_up = array(
-                    "otp" => $otp_sms
-                );
-                $this->db->where('id',$_POST['otp_auth_id']);
-                $this->db->update('members',$member_up);
+                // $otp_sms = '1234';
+                $otp_sms = otp_generate(4);
 
-                $array['status'] = 200;
-                $array['title'] = 'OTP Sent successfully';
-                $array['message'] = (object) array();
-                echo json_encode($array);
+                $fields = array();
+                $fields['api_key'] = SMS_API;
+                $fields['api_secret'] = SMS_SECRET;
+                $fields['to'] = C_CODE.$member->phone;
+                $fields['from'] = SMS_FROM;
+                $fields['text'] = $otp_sms." Is Your IBid Confirmation Code";
+                $data_string = json_encode($fields);
+
+                $sms_res = $this->sent_SMS($data_string);
+
+                // echo "<pre>";print_r($sms_res);
+                // echo $sms_res->messages[0]->{'error-text'};
+
+                if($sms_res->messages[0]->status == 0){
+
+                    $member_up = array(
+                        "otp" => $otp_sms
+                    );
+                    $this->db->where('id',$_POST['otp_auth_id']);
+                    $this->db->update('members',$member_up);
+
+                    $array['status'] = 200;
+                    $array['title'] = 'OTP Sent successfully';
+                    $array['message'] = (object) array();
+                    echo json_encode($array);
+
+                }else{
+
+                    $array['status'] = 301;
+                    $array['title'] = "OTP sending failed";
+                    $array['message'] = (object) array("erros"=>$sms_res->messages[0]->{'error-text'});
+                    echo json_encode($array);
+
+                }
+
             }
         }
 
@@ -541,18 +568,61 @@
             }else{
                 $member = $this->get_member_by_id($_POST['otp_auth_id']);
 
-                $otp_sms = '1234';
-                $member_up = array(
-                    "otp" => $otp_sms
-                );
-                $this->db->where('id',$_POST['otp_auth_id']);
-                $this->db->update('members',$member_up);
+                // $otp_sms = '1234';
+                $otp_sms = otp_generate(4);
 
-                $array['status'] = 200;
-                $array['title'] = 'OTP Sent Again. Please Verify.';
-                $array['message'] = (object) array();
-                echo json_encode($array);
+                $fields = array();
+                $fields['api_key'] = SMS_API;
+                $fields['api_secret'] = SMS_SECRET;
+                $fields['to'] = C_CODE.$member->phone;
+                $fields['from'] = SMS_FROM;
+                $fields['text'] = $otp_sms." Is Your IBid Confirmation Code";
+                $data_string = json_encode($fields);
+
+                $sms_res = $this->sent_SMS($data_string);
+
+                if($sms_res->messages[0]->status == 0){
+
+                    $member_up = array(
+                        "otp" => $otp_sms
+                    );
+                    $this->db->where('id',$_POST['otp_auth_id']);
+                    $this->db->update('members',$member_up);
+    
+                    $array['status'] = 200;
+                    $array['title'] = 'OTP Sent Again. Please Verify.';
+                    $array['message'] = (object) array();
+                    echo json_encode($array);
+
+                }else{
+
+                    $array['status'] = 301;
+                    $array['title'] = "OTP sending failed";
+                    $array['message'] = (object) array("erros"=>$sms_res->messages[0]->{'error-text'});
+                    echo json_encode($array);
+
+                }
+                
             }
+        }
+
+        public function sent_SMS($data_string){
+            $curl = curl_init(SMS_BASE."json");
+            curl_setopt($curl, CURLOPT_HEADER, false);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curl, CURLOPT_POST, true);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array(                                                                   
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data_string))                                                                       
+            );
+
+            $curl_res = curl_exec($curl);
+            $status_data = json_decode($curl_res);
+            // print_r($status_data);
+            curl_close($curl);
+            return $status_data;
         }
 
         public function verifyOTP(){
@@ -703,20 +773,41 @@
                     $member = $query1->row();
 
                     // sending OTP
-                    $otp_sms = '1234';
+                    // $otp_sms = '1234';
+                    $otp_sms = otp_generate(4);
+
+                    $fields = array();
+                    $fields['api_key'] = SMS_API;
+                    $fields['api_secret'] = SMS_SECRET;
+                    $fields['to'] = C_CODE.$member->phone;
+                    $fields['from'] = SMS_FROM;
+                    $fields['text'] = $otp_sms." Is Your IBid Confirmation Code";
+                    $data_string = json_encode($fields);
+
+                    $sms_res = $this->sent_SMS($data_string);
+                    if($sms_res->messages[0]->status == 0){
+
+                        $member_up = array(
+                            "otp" => $otp_sms
+                        );
+                        $this->db->where('id',$member->id);
+                        $this->db->update('members',$member_up);
+        
+                        $array['status'] = 200;
+                        $array['title'] = 'Success';
+                        $array['message'] = array('success'=> 'OTP Sent Successfully');
+                        echo json_encode($array);
+                        exit;
+    
+                    }else{
+                        
+                        $array['status'] = 301;
+                        $array['title'] = "OTP sending failed";
+                        $array['message'] = (object) array("erros"=>$sms_res->messages[0]->{'error-text'});
+                        echo json_encode($array);
+    
+                    }
                     
-                    $member_up = array(
-                        "otp" => $otp_sms
-                    );
-                    $this->db->where('id',$member->id);
-                    $this->db->update('members',$member_up);
-
-                    $array['status'] = 200;
-                    $array['title'] = 'Success';
-                    $array['message'] = array('success'=> 'OTP Sent Successfully');
-                    echo json_encode($array);
-                    exit;
-
                     // $array['status'] = 200;
                     // $array['title'] = 'Account With Phone Number Is Available';
                     // $array['message'] = (object) array();
@@ -822,7 +913,259 @@
             }
         }
 
-        public function addBid() {
+        public function _addBid() {
+            // exit;
+            $postdata = file_get_contents("php://input");
+            $_POST = json_decode($postdata, true);
+
+            $this->token_check($_POST);
+            // echo "<pre>";print_r($_POST);
+            // exit;
+
+            $config = [
+                [
+                        'field' => 'member_id',
+                        'label' => 'Member',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Add Member Id.',
+                        ],
+                ],
+                [
+                        'field' => 'number_type',
+                        'label' => 'Number Type',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Car Number Or Phone Number.',
+                        ],
+                ],
+                [
+                        'field' => 'number_subtype',
+                        'label' => 'Number Subtype',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Types Of Number.',
+                        ],
+                ],
+                [
+                        'field' => 'upgrade_type',
+                        'label' => 'Upgrade Type',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Select Bid Upgrade Type Standered Or Premium',
+                        ],
+                ],
+                [
+                        'field' => 'number',
+                        'label' => 'Number',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Enter Number',
+                        ],
+                ],
+                [
+                        'field' => 'starting_bid_amount',
+                        'label' => 'Phone',
+                        'rules' => 'required|numeric',
+                        'errors' => [
+                                'required' => 'Please Select Starting Bid Amount ',
+                                'numeric' => 'Please Enter VAlid Amount',
+                        ],
+                ],
+                [
+                        'field' => 'duration_id',
+                        'label' => 'Duration',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Duration ',
+                        ],
+                ],
+                [
+                        'field' => 'fee_id',
+                        'label' => 'Fee',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Fee is Required Field ',
+                        ],
+                ],
+                [
+                    'field' => 'accept_payment_type',
+                    'label' => 'Accept Payment Type',
+                    'rules' => 'required',
+                    'errors' => [
+                            'required' => 'Please Select Payment Accept Mode ',
+                    ],
+                ],
+                [
+                    'field' => 'total',
+                    'label' => 'Total',
+                    'rules' => 'required|numeric',
+                    'errors' => [
+                            'required' => 'Total is missing',
+                            'numeric' => 'Invalid Total',
+                    ],
+                ],
+                [
+                    'field' => 'transaction_id',
+                    'label' => 'transaction_id',
+                    'rules' => 'required',
+                    'errors' => [
+                    ],
+                ],
+                [
+                    'field' => 'amount_paid',
+                    'label' => 'amount_paid',
+                    'rules' => 'required',
+                    'errors' => [
+                    ],
+                ],
+            ];
+
+            $this->form_validation->set_data($_POST);
+            $this->form_validation->set_rules($config);
+        
+            if ($this->form_validation->run() == FALSE)
+            {
+                $array['status'] = 400;
+                $array['title'] = 'Error!';
+
+                $new_err = array();
+                foreach($this->form_validation->error_array() as $key => $val){
+                    $new_err['error'] = $val;
+                    break;
+                }
+                $array['message'] = $new_err;
+                echo json_encode($array);
+                exit;
+
+            }else{
+
+                if($_POST['upgrade_type'] != "standard" && $_POST['upgrade_type'] != "premium"){
+                    $array['status'] = 400;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error"=>'upgrade_type must be standard or premium');
+                    echo json_encode($array);
+                    exit;
+                }
+
+                if((isset($_POST['coupon']) && !isset($_POST['discount'])) || (!isset($_POST['coupon']) && isset($_POST['discount']))){
+                    $array['status'] = 310;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error"=>'Discount & coupon Both Required!');
+                    echo json_encode($array);
+                    exit;
+                }
+
+                $numbertype_str = "";
+                $numbersubtype_str = "";
+                $duration_str = "";
+                $fee_str = "";
+
+                $this->db->select('*');
+                $this->db->where('id',$this->input->post('duration_id'));
+                $query1 = $this->db->get('durations');
+                $duration = $query1->row();
+
+                if($duration){
+                    // $bid_end_datetime = Date('Y-m-d H:i:s', strtotime('+'.$duration->no_of_days.' days'));
+                    $duration_str = $duration->no_of_days;
+                }
+                // ---------------
+
+                $this->db->select('nst.id,nst.sub_name,nt.name');
+                $this->db->from('number_subtypes nst');
+                $this->db->join('number_types nt','nt.id = nst.number_type_id','left');
+                $this->db->where('nst.id',$this->input->post('number_subtype'));
+                $this->db->group_by('nst.id');
+                $query2 = $this->db->get();
+                $nst = $query2->row();
+
+                if($nst){
+                    $numbertype_str = $nst->name;
+                    $numbersubtype_str = $nst->sub_name;
+                }
+                
+                // ---------------
+
+                $this->db->select('f.id,f.fee_amount');
+                $this->db->where('f.id',$this->input->post('fee_id'));
+                $this->db->from('fees f');
+                $query3 = $this->db->get();
+                $fees_ar = $query3->row();
+
+                if($fees_ar){
+                    $fee_str = $fees_ar->fee_amount;
+                }
+
+                // -------------------
+
+                // same number ongoing then error
+
+                $this->db->select('id');
+                $this->db->from('bids b');
+                $this->db->where('b.numbersubtype_str',$numbersubtype_str);
+                $this->db->where('b.number',$_POST['number']);
+                $this->db->where('b.progress_status','0');
+                $query_same = $this->db->get();
+                
+                if ($query_same->num_rows() > 0) {
+                    $array['status'] = 330;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error" => "Bid with same numbers is already going on.");
+                    echo json_encode($array);
+                    exit;
+                }
+
+                // =====================
+
+                $coupon = "";
+                $discount = "";
+                if(isset($_POST['coupon']) && isset($_POST['discount'])){
+                    $coupon = $_POST['coupon'];
+                    $discount = $_POST['discount'];
+                }
+
+                // payment_check_here
+
+                $bid_data = array(
+                            'member_id' => $_POST['member_id'],
+                            'number_type' => $_POST['number_type'],
+                            'number_subtype' => $_POST['number_subtype'],
+                            'upgrade_type' => $_POST['upgrade_type'],
+                            'number' => $_POST['number'],
+                            'starting_bid_amount' => $_POST['starting_bid_amount'],
+                            'duration' => $_POST['duration_id'],
+                            'fee' => $_POST['fee_id'],
+                            'coupon' => $coupon,
+                            'accept_payment_type' => $_POST['accept_payment_type'],
+                            'numbertype_str' => $numbertype_str,
+                            'numbersubtype_str' => $numbersubtype_str,
+                            'duration_str' => $duration_str,
+                            'fee_str' => $fee_str,
+                            'discount' => $discount,
+                            // 'bid_end_datetime' => $bid_end_datetime,
+                            // 'notification' => 'off',
+                            'purchaser' => 0,
+                            'total' => $_POST['total'],
+                            'status' => 'Disable',
+                            'live' => 'Y',
+                            'created_at' => date('Y-m-d H:i:s')
+                );
+
+                if($this->db->insert('bids',$bid_data)){
+                    $bid_id = $this->db->insert_id();
+
+                    $array['status'] = 200;
+                    $array['title'] = 'Success!';
+                    $array['message'] = (object) array();
+                    echo json_encode($array);
+                    exit;
+                }
+            }
+
+        }
+
+        public function addBid_check() {
             // exit;
             $postdata = file_get_contents("php://input");
             $_POST = json_decode($postdata, true);
@@ -1011,6 +1354,257 @@
                     exit;
                 }
 
+                // // =====================
+
+                // $coupon = "";
+                // $discount = "";
+                // if(isset($_POST['coupon']) && isset($_POST['discount'])){
+                //     $coupon = $_POST['coupon'];
+                //     $discount = $_POST['discount'];
+                // }
+
+                // $bid_data = array(
+                //             'member_id' => $_POST['member_id'],
+                //             'number_type' => $_POST['number_type'],
+                //             'number_subtype' => $_POST['number_subtype'],
+                //             'upgrade_type' => $_POST['upgrade_type'],
+                //             'number' => $_POST['number'],
+                //             'starting_bid_amount' => $_POST['starting_bid_amount'],
+                //             'duration' => $_POST['duration_id'],
+                //             'fee' => $_POST['fee_id'],
+                //             'coupon' => $coupon,
+                //             'accept_payment_type' => $_POST['accept_payment_type'],
+                //             'numbertype_str' => $numbertype_str,
+                //             'numbersubtype_str' => $numbersubtype_str,
+                //             'duration_str' => $duration_str,
+                //             'fee_str' => $fee_str,
+                //             'discount' => $discount,
+                //             // 'bid_end_datetime' => $bid_end_datetime,
+                //             // 'notification' => 'off',
+                //             'purchaser' => 0,
+                //             'total' => $_POST['total'],
+                //             'status' => 'Disable',
+                //             'live' => 'Y',
+                //             'created_at' => date('Y-m-d H:i:s')
+                // );
+
+                // if($this->db->insert('bids',$bid_data)){
+                    // $bid_id = $this->db->insert_id();
+
+                    $array['status'] = 200;
+                    $array['title'] = 'Success!';
+                    $array['message'] = (object) array();
+                    echo json_encode($array);
+                    exit;
+
+                // }
+            }
+
+        }
+
+        public function addBid() {
+            // exit;
+            $postdata = file_get_contents("php://input");
+            $_POST = json_decode($postdata, true);
+
+            $this->token_check($_POST);
+            // echo "<pre>";print_r($_POST);
+            // exit;
+
+            $config = [
+                [
+                        'field' => 'member_id',
+                        'label' => 'Member',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Add Member Id.',
+                        ],
+                ],
+                [
+                        'field' => 'number_type',
+                        'label' => 'Number Type',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Car Number Or Phone Number.',
+                        ],
+                ],
+                [
+                        'field' => 'number_subtype',
+                        'label' => 'Number Subtype',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Types Of Number.',
+                        ],
+                ],
+                [
+                        'field' => 'upgrade_type',
+                        'label' => 'Upgrade Type',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Select Bid Upgrade Type Standered Or Premium',
+                        ],
+                ],
+                [
+                        'field' => 'number',
+                        'label' => 'Number',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Enter Number',
+                        ],
+                ],
+                [
+                        'field' => 'starting_bid_amount',
+                        'label' => 'Phone',
+                        'rules' => 'required|numeric',
+                        'errors' => [
+                                'required' => 'Please Select Starting Bid Amount ',
+                                'numeric' => 'Please Enter VAlid Amount',
+                        ],
+                ],
+                [
+                        'field' => 'duration_id',
+                        'label' => 'Duration',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Please Select Duration ',
+                        ],
+                ],
+                [
+                        'field' => 'fee_id',
+                        'label' => 'Fee',
+                        'rules' => 'required',
+                        'errors' => [
+                                'required' => 'Fee is Required Field ',
+                        ],
+                ],
+                [
+                    'field' => 'accept_payment_type',
+                    'label' => 'Accept Payment Type',
+                    'rules' => 'required',
+                    'errors' => [
+                            'required' => 'Please Select Payment Accept Mode ',
+                    ],
+                ],
+                [
+                    'field' => 'total',
+                    'label' => 'Total',
+                    'rules' => 'required|numeric',
+                    'errors' => [
+                            'required' => 'Total is missing',
+                            'numeric' => 'Invalid Total',
+                    ],
+                ],
+                // [
+                //     'field' => 'transaction_id',
+                //     'label' => 'transaction_id',
+                //     'rules' => 'required',
+                //     'errors' => [
+                //     ],
+                // ],
+                [
+                    'field' => 'amount_paid',
+                    'label' => 'amount_paid',
+                    'rules' => 'required',
+                    'errors' => [
+                    ],
+                ],
+            ];
+
+            $this->form_validation->set_data($_POST);
+            $this->form_validation->set_rules($config);
+        
+            if ($this->form_validation->run() == FALSE)
+            {
+                $array['status'] = 400;
+                $array['title'] = 'Error!';
+
+                $new_err = array();
+                foreach($this->form_validation->error_array() as $key => $val){
+                    $new_err['error'] = $val;
+                    break;
+                }
+                $array['message'] = $new_err;
+                echo json_encode($array);
+                exit;
+
+            }else{
+
+                if($_POST['upgrade_type'] != "standard" && $_POST['upgrade_type'] != "premium"){
+                    $array['status'] = 400;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error"=>'upgrade_type must be standard or premium');
+                    echo json_encode($array);
+                    exit;
+                }
+
+                if((isset($_POST['coupon']) && !isset($_POST['discount'])) || (!isset($_POST['coupon']) && isset($_POST['discount']))){
+                    $array['status'] = 310;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error"=>'Discount & coupon Both Required!');
+                    echo json_encode($array);
+                    exit;
+                }
+
+                $numbertype_str = "";
+                $numbersubtype_str = "";
+                $duration_str = "";
+                $fee_str = "";
+
+                $this->db->select('*');
+                $this->db->where('id',$this->input->post('duration_id'));
+                $query1 = $this->db->get('durations');
+                $duration = $query1->row();
+
+                if($duration){
+                    // $bid_end_datetime = Date('Y-m-d H:i:s', strtotime('+'.$duration->no_of_days.' days'));
+                    $duration_str = $duration->no_of_days;
+                }
+                // ---------------
+
+                $this->db->select('nst.id,nst.sub_name,nt.name');
+                $this->db->from('number_subtypes nst');
+                $this->db->join('number_types nt','nt.id = nst.number_type_id','left');
+                $this->db->where('nst.id',$this->input->post('number_subtype'));
+                $this->db->group_by('nst.id');
+                $query2 = $this->db->get();
+                $nst = $query2->row();
+
+                if($nst){
+                    $numbertype_str = $nst->name;
+                    $numbersubtype_str = $nst->sub_name;
+                }
+                
+                // ---------------
+
+                $this->db->select('f.id,f.fee_amount');
+                $this->db->where('f.id',$this->input->post('fee_id'));
+                $this->db->from('fees f');
+                $query3 = $this->db->get();
+                $fees_ar = $query3->row();
+
+                if($fees_ar){
+                    $fee_str = $fees_ar->fee_amount;
+                }
+
+                // -------------------
+
+                // same number ongoing then error
+
+                $this->db->select('id');
+                $this->db->from('bids b');
+                $this->db->where('b.numbersubtype_str',$numbersubtype_str);
+                $this->db->where('b.number',$_POST['number']);
+                $this->db->where('b.progress_status','0');
+                $query_same = $this->db->get();
+                
+                if ($query_same->num_rows() > 0) {
+                    $array['status'] = 330;
+                    $array['title'] = 'Error';
+                    $array['message'] = array("error" => "Bid with same numbers is already going on.");
+                    echo json_encode($array);
+                    exit;
+                }
+
                 // =====================
 
                 $coupon = "";
@@ -1020,33 +1614,114 @@
                     $discount = $_POST['discount'];
                 }
 
+
+                // if($_POST['accept_payment_type'] == "card"){
+
+                //     // check payment here
+                //     $fields = array();
+                //     $fields['action'] = "status";
+                //     $fields['transactionID'] = $_POST['transaction_id'];
+                //     $fields['secretKey'] = QPAY_SECRET;
+                //     $fields['gatewayId'] = QPAY_GATEWAYID;
+                //     $fields['amount'] = "200";
+
+                //     $data_string = json_encode($fields);   
+
+                //     $curl = curl_init(QPAY_BASE);
+                //     curl_setopt($curl, CURLOPT_HEADER, false);
+                //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                //     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                //     curl_setopt($curl, CURLOPT_POST, true);
+                //     curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+                //     curl_setopt($curl, CURLOPT_HTTPHEADER, array(                                                                   
+                //         'Content-Type: application/json',
+                //         'Content-Length: ' . strlen($data_string))                                                                       
+                //     );
+
+                //     $curl_res = curl_exec($curl);
+                //     $status_data = json_decode($curl_res);
+                //     // print_r($status_data);
+                //     curl_close($curl);
+
+                //     if(isset($status_data)){
+                //         if($status_data->status == "error"){
+                //             $array['status'] = 340;
+                //             $array['title'] = 'Error';
+                //             $array['message'] = array("error" => $status_data->reason);
+                //             echo json_encode($array);
+                //             exit;
+                //         }
+                //     }else{
+                //         $array['status'] = 350;
+                //         $array['title'] = 'Error';
+                //         $array['message'] = array("error" => "Payment not found");
+                //         echo json_encode($array);
+                //     }
+
+                //     if($status_data->amount != $_POST['amount_paid']){
+                //         $array['status'] = 360;
+                //         $array['title'] = 'Error';
+                //         $array['message'] = array("error" => "Amount Differnece");
+                //         echo json_encode($array);
+                //     }
+
+                // }
+
+                // if success then add bid otherwise failed
                 $bid_data = array(
-                            'member_id' => $_POST['member_id'],
-                            'number_type' => $_POST['number_type'],
-                            'number_subtype' => $_POST['number_subtype'],
-                            'upgrade_type' => $_POST['upgrade_type'],
-                            'number' => $_POST['number'],
-                            'starting_bid_amount' => $_POST['starting_bid_amount'],
-                            'duration' => $_POST['duration_id'],
-                            'fee' => $_POST['fee_id'],
-                            'coupon' => $coupon,
-                            'accept_payment_type' => $_POST['accept_payment_type'],
-                            'numbertype_str' => $numbertype_str,
-                            'numbersubtype_str' => $numbersubtype_str,
-                            'duration_str' => $duration_str,
-                            'fee_str' => $fee_str,
-                            'discount' => $discount,
-                            // 'bid_end_datetime' => $bid_end_datetime,
-                            // 'notification' => 'off',
-                            'purchaser' => 0,
-                            'total' => $_POST['total'],
-                            'status' => 'Disable',
-                            'live' => 'Y',
-                            'created_at' => date('Y-m-d H:i:s')
+                    'member_id' => $_POST['member_id'],
+                    'number_type' => $_POST['number_type'],
+                    'number_subtype' => $_POST['number_subtype'],
+                    'upgrade_type' => $_POST['upgrade_type'],
+                    'number' => $_POST['number'],
+                    'starting_bid_amount' => $_POST['starting_bid_amount'],
+                    'duration' => $_POST['duration_id'],
+                    'fee' => $_POST['fee_id'],
+                    'coupon' => $coupon,
+                    'accept_payment_type' => $_POST['accept_payment_type'],
+                    'numbertype_str' => $numbertype_str,
+                    'numbersubtype_str' => $numbersubtype_str,
+                    'duration_str' => $duration_str,
+                    'fee_str' => $fee_str,
+                    'discount' => $discount,
+                    // 'bid_end_datetime' => $bid_end_datetime,
+                    // 'notification' => 'off',
+                    'purchaser' => 0,
+                    'total' => $_POST['total'],
+                    'status' => 'Disable',
+                    'live' => 'Y',
+                    'created_at' => date('Y-m-d H:i:s')
                 );
 
                 if($this->db->insert('bids',$bid_data)){
                     $bid_id = $this->db->insert_id();
+
+                    if($_POST['accept_payment_type'] == "card"){
+                        // $payment_data['payment_datetime'] = $status_data->datetime;
+                        // $payment_data['referenceNo'] = $status_data->orderId;
+                        // $payment_data['status'] = $status_data->status;
+                        // $payment_data['response'] = $curl_res;
+
+                        $payment_data['payment_datetime'] = "0000-00-00 00:00:00";
+                        $payment_data['referenceNo'] = "";
+                        $payment_data['status'] = "";
+                        $payment_data['response'] = "";
+
+                        $payment_data['transaction_id'] = $_POST['transaction_id'];
+                    }else{
+                        $payment_data['payment_datetime'] = "0000-00-00 00:00:00";
+                        $payment_data['referenceNo'] = "";
+                        $payment_data['status'] = "";
+                        $payment_data['response'] = "";
+                        $payment_data['transaction_id'] = '';
+                    }
+
+                    $payment_data = array();
+                    $payment_data['bid_id'] = $bid_id;
+                    $payment_data['accept_payment_type'] = $_POST['accept_payment_type'];
+                    $payment_data['amount'] = $_POST['amount_paid'];
+                    $payment_data['created_at'] = date('Y-m-d H:i:s');
+                    $this->db->insert('payment',$payment_data);
 
                     $array['status'] = 200;
                     $array['title'] = 'Success!';
@@ -1054,6 +1729,7 @@
                     echo json_encode($array);
                     exit;
                 }
+
             }
 
         }

@@ -142,8 +142,7 @@ if ( ! function_exists('checklogin'))
 		// Shufle the $str_result and returns substring 
 		// of specified length 
 		return substr(str_shuffle($str_result), 0, $length_of_string); 
-	} 
-
+	}
 
 	function send_mail($to_email,$subject,$msg,$cc=""){
 		// echo "send_mail";
@@ -179,4 +178,17 @@ if ( ! function_exists('checklogin'))
 		}
 	}
 
+}
+
+if ( ! function_exists('otp_generate'))
+{
+	function otp_generate($length_of_string)
+	{
+		// String of all alphanumeric character 
+		$str_result = '0123456789'; 
+
+		// Shufle the $str_result and returns substring 
+		// of specified length 
+		return substr(str_shuffle($str_result), 0, $length_of_string); 
+	}
 }

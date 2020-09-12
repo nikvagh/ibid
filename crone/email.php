@@ -1,7 +1,7 @@
 
 <?php
     function get_email_template($name,$bid_number,$email_msg_for,$name1 = "",$email1 = "",$phone1 = ""){ 
-        $base_url = "http://apps.kartuminfotech.com/";
+        $base_url = "http://ibid.cherrydemoserver10.com/";
         
         $html = "";
         $html .= '<style>
